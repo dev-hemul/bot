@@ -6,7 +6,7 @@ import User from './model/user.js';
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const MONGODB_URI = process.env.MONGODB_URI;
-const JIRA_GROUP_CHAT_ID = -5154915872;
+const JIRA_GROUP_CHAT_ID = Number(process.env.JIRA_GROUP_CHAT_ID);
 
 if (!BOT_TOKEN || !MONGODB_URI) {
     console.error('❌ BOT_TOKEN або MONGODB_URI не знайдено в .env');
