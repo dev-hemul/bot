@@ -6,6 +6,7 @@ import User from './model/user.js';
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const MONGODB_URI = process.env.MONGODB_URI;
+const JIRA_GROUP_CHAT_ID = -5154915872;
 
 if (!BOT_TOKEN || !MONGODB_URI) {
     console.error('❌ BOT_TOKEN або MONGODB_URI не знайдено в .env');
@@ -39,11 +40,22 @@ bot.command('start', async (ctx) => {
     }
 });
 
-// Webhook
+app.post('/jira-webhook', express.text({ type: '*/*' }), async (req, res) => {
+    res.sendStatus(200);
+    const message = req.body;
+    console.log('📩 Отримано від Jira:', message);
+    try {
+        await bot.api.sendMessage(JIRA_GROUP_CHAT_ID, message);
+        console.log('✅ Повідомлення надіслано');
+    } catch (err) {
+        console.error('❌ Помилка надсилання:', err.message);
+    }
+});
+
 app.use(express.json());
 app.post('/webhook', webhookCallback(bot, 'express'));
 
-// Запуск сервера
-app.listen(3000, () => {
-    console.log('🚀 Сервер запущено на порту 3000');
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 Сервер запущено на порту ${PORT}`);
 });
