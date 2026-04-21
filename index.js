@@ -8,8 +8,8 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const MONGODB_URI = process.env.MONGODB_URI;
 const JIRA_GROUP_CHAT_ID = Number(process.env.JIRA_GROUP_CHAT_ID);
 
-if (!BOT_TOKEN || !MONGODB_URI) {
-    console.error('❌ BOT_TOKEN або MONGODB_URI не знайдено в .env');
+if (!BOT_TOKEN || !MONGODB_URI || Number.isNaN(JIRA_GROUP_CHAT_ID)) {
+    console.error('❌ BOT_TOKEN, MONGODB_URI або JIRA_GROUP_CHAT_ID невалідні в .env');
     process.exit(1);
 }
 
