@@ -53,8 +53,11 @@ bot.command('link', async (ctx) => {
     const auth = Buffer.from(`${process.env.JIRA_USER_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64');
     const url = `https://${process.env.JIRA_INSTANCE}.atlassian.net/rest/api/3/user/search?query=${encodeURIComponent(email)}`;
     try {
+        console.log(`Пошук email: ${email}`);
         const res = await fetch(url, { headers: { 'Authorization': `Basic ${auth}` } });
+        console.log(`Статус відповіді: ${res.status}`);
         const users = await res.json();
+        console.log(`Отримано користувачів: ${JSON.stringify(users)}`);
         const user = users.find(u => u.emailAddress?.toLowerCase() === email.toLowerCase());
         if (!user) {
             return ctx.reply(`❌ Не знайдено користувача Jira з email ${email}. Перевірте email.`);
@@ -71,6 +74,34 @@ bot.command('link', async (ctx) => {
         ctx.reply('❌ Помилка зв\'язку з Jira. Спробуйте пізніше.');
     }
 });
+
+// Функція для отримання кількості активних задач за accountId
+async function getActiveTasksCount(accountId) {
+    const token = process.env.JIRA_API_TOKEN;
+    const email = process.env.JIRA_USER_EMAIL;
+    const instance = process.env.JIRA_INSTANCE;
+    const project = process.env.JIRA_PROJECT_KEY;
+    // Активні статуси – змініть/додайте за потреби
+    const activeStatuses = ['В работе'];
+    const statusesStr = activeStatuses.map(s => `"${s}"`).join(',');
+    const jql = `project = ${project} AND assignee = "${accountId}" AND status in (${statusesStr})`;
+    const safeJql = jql.replace(/"/g, '\\"');
+    // Використовуємо максимальний ліміт 5000 (для невеликих проектів достатньо)
+    const cmd = `curl -s -X POST -u "${email}:${token}" -H "Content-Type: application/json" -d '{"jql":"${safeJql}","maxResults":5000}' "https://${instance}.atlassian.net/rest/api/3/search/jql"`;
+    try {
+        const { stdout } = await execPromise(cmd);
+        const data = JSON.parse(stdout);
+        if (data.errorMessages) {
+            console.error('Jira API error:', data.errorMessages);
+            return null;
+        }
+        // Кількість задач = довжина масиву issues
+        return data.issues ? data.issues.length : 0;
+    } catch (err) {
+        console.error('exec error:', err);
+        return null;
+    }
+}
 
 // Повертає об'єкт: { "Статус1": кількість, "Статус2": кількість, ... }
 async function getUserTasksByStatus(accountId) {
